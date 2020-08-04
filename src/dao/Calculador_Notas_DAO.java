@@ -24,7 +24,6 @@ public class Calculador_Notas_DAO implements Serializable{
             pstm=bd.conecta().prepareStatement("SELECT * FROM gabarito ORDER BY id_da_questao");
             rs=pstm.executeQuery();
             int i=0;
-            
             while(rs.next()){
                 Gabarito calc_notas=new Gabarito(rs.getInt("id_da_questao"), rs.getString("resposta_correta"));
                 respostas_corretas[i]=calc_notas.getResposta_correta();
@@ -33,7 +32,7 @@ public class Calculador_Notas_DAO implements Serializable{
             bd.desconecta();
         }
         catch (SQLException e){
-            e.printStackTrace();
+            System.out.println("Erro na consulta das respostas no banco de dados: "+e.getMessage());
         }
         return respostas_corretas;
     }
@@ -42,6 +41,7 @@ public class Calculador_Notas_DAO implements Serializable{
         try{
             PreparedStatement pstm;
             bd=new Banco_de_Dados(); // CONECÇÃO ESTABELECIDA.
+            // CÓDIGO PARA INSERIR VALORES NA TABELA.
             pstm=bd.conecta().prepareStatement("INSERT INTO respostas_dos_usuarios "
                                               +"(nome_do_usuario, resposta_q1, resposta_q2, resposta_q3, "
                                               +"resposta_q4, resposta_q5, nota_final) "
@@ -57,7 +57,7 @@ public class Calculador_Notas_DAO implements Serializable{
             bd.desconecta();
         }
         catch (SQLException e){
-            e.printStackTrace();
+            System.out.println("Erro no armazenamento de informações no banco de dados: "+e.getMessage());
         }
     }
 }

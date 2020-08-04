@@ -1,5 +1,9 @@
 package client;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
@@ -9,9 +13,10 @@ import java.util.logging.Logger;
 import middleware.Interface_Calculador_Notas;
 
 public class Cliente extends javax.swing.JFrame {
-    
-    private int teste;
-    private Interface_Calculador_Notas objRemoto=null;
+    private int nota_prova; // RECEBERÁ O RETORNO DA FUNÇÃO REMOTA.
+    private Interface_Calculador_Notas objRemoto=null; // OBJETO PARA CONECTAR COM O SERVIDOR. 
+    File file = new File("respostas.txt"); // ARQUIVO DE TEXTO A SER ENVIADO PARA O SERVIDOR.
+    String nome, questao_1, questao_2, questao_3, questao_4, questao_5; // PARA GRAVAR NO ARQUIVO DE TEXTO.
 
     public Cliente() {
         initComponents();
@@ -219,7 +224,9 @@ public class Cliente extends javax.swing.JFrame {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(label_apresentacao, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(label_apresentacao, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addContainerGap())
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
@@ -371,7 +378,9 @@ public class Cliente extends javax.swing.JFrame {
     }//GEN-LAST:event_questao_1_aActionPerformed
 
     private void btn_calcular_notaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_calcular_notaActionPerformed
-        String nome, questao_1, questao_2, questao_3, questao_4, questao_5;        
+        
+/*-------------- IDENTIFICAR RESPOSTAS E ATRIBUIR ÀS VARIÁVEIS. --------------*/
+
         nome=text_nome.getText();
         if(questao_1_a.isSelected()) questao_1="A";
         else if(questao_1_b.isSelected()) questao_1="B";
@@ -402,26 +411,65 @@ public class Cliente extends javax.swing.JFrame {
             else if(questao_5_c.isSelected()) questao_5="C";
                 else if(questao_5_d.isSelected()) questao_5="D";
                     else if(questao_5_e.isSelected()) questao_5="E";
-                        else questao_5="-";       
-        try{
-            objRemoto=(Interface_Calculador_Notas)Naming.lookup("//localhost/servidor_calculador_nota");
-            //objRemoto=(Interface_Calculador_Notas)Naming.lookup("rmi://192.168.1.103:1099/servidor_calculador_nota");
+                        else questao_5="-";
+        
+/*------------------------- CRIAR O ARQUIVO DE TEXTO -------------------------*/
+
+        try(BufferedWriter writer=new BufferedWriter(new FileWriter(file))){
+            // USO DA FUNÇÃO write PARA ESCREVER DADOS NO ARQUIVO DE TEXTO.
+            writer.write(nome);
+            writer.newLine();
+            writer.write("1-"+questao_1);
+            writer.newLine();
+            writer.write("2-"+questao_2);
+            writer.newLine();
+            writer.write("3-"+questao_3);
+            writer.newLine();
+            writer.write("4-"+questao_4);
+            writer.newLine();
+            writer.write("5-"+questao_5);
+            writer.newLine();
+            writer.flush(); // FECHA A ESCRITA DO ARQUIVO.
+            System.out.println("Arquivo escrito.");
         }
-        catch (NotBoundException | MalformedURLException | RemoteException ex) {
-            Logger.getLogger(Cliente.class.getName()).log(Level.SEVERE, null, ex);           
-        }       
-        try {
-            teste=objRemoto.calcular_nota(nome, questao_1, questao_2, questao_3, questao_4, questao_5);
-            String str = Integer.toString(teste);
-            text_nota_obtida.setText(str);
-        }
-        catch (RemoteException ex){
+        catch(IOException ex){
             Logger.getLogger(Cliente.class.getName()).log(Level.SEVERE, null, ex);
-        }       
+            System.out.println("Erro na escrita dos dados no arquivo de texto: "+ex.getMessage());
+        }      
+           
+/*-------------------------- CONECTAR COM SERVIDOR. --------------------------*/  
+
+        try{
+            /*
+            // SERVIDOR E CLIENTE NA MESMA MÁQUINA:
+            objRemoto=(Interface_Calculador_Notas)Naming.lookup("//localhost/servidor_calculador_nota");
+            */            
+
+            // SERVIDOR E CLIENTE EM MÁQUINAS DIFERENTES:
+            // O IP ABAIXO DEVE SER TROCADO PARA O IP DE ONDE O SERVIDOR ESTIVER RODANDO.
+            objRemoto=(Interface_Calculador_Notas)Naming.lookup("rmi://192.168.1.106:1099/servidor_calculador_nota");            
+        }
+        catch(NotBoundException | MalformedURLException | RemoteException ex){
+            Logger.getLogger(Cliente.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Erro na conexão com o servidor por parte do cliente: "+ex.getMessage());
+        }
+        
+/*---------------------- FAZER CHAMADA DA FUNÇÃO REMOTA. ---------------------*/
+        
+        try{
+        // objRemoto.calcular_nota(file) CHAMA A FUNÇÃO REMOTA PASSANDO O ARQUIVO DE TEXTO COM NOME E RESPOSTAS.
+        // Integer.toString() CONVERTE O RETORNO de Inteiro PARA String.
+        // text_nota_obtida.setText() EXIBE O VALOR NA INTERFACE DE USUÁRIO.
+        text_nota_obtida.setText(Integer.toString(objRemoto.calcular_nota(file)));
+        }
+        catch(RemoteException ex){
+            Logger.getLogger(Cliente.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Erro na chamada remota por parte do cliente: "+ex.getMessage());
+        }      
     }//GEN-LAST:event_btn_calcular_notaActionPerformed
 
-    public static void main(String args[]) {
-        java.awt.EventQueue.invokeLater(() -> {
+    public static void main(String args[]){
+        java.awt.EventQueue.invokeLater(()->{
             new Cliente().setVisible(true);
         });
     }

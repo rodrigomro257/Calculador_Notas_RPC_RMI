@@ -11,8 +11,7 @@ public class Banco_de_Dados {
     private static final String PASSWORD="";
     private Connection conn;
     
-    public Banco_de_Dados(){
-        
+    public Banco_de_Dados(){  
     }
     
     public Connection conecta(){
@@ -21,8 +20,7 @@ public class Banco_de_Dados {
             conn=DriverManager.getConnection(DATABASE_URL, USER, PASSWORD);
         }
         catch(ClassNotFoundException | SQLException e){
-            System.out.println(e.getMessage());
-            e.printStackTrace();
+            System.out.println("Erro na conexão com o banco de dados por parte do BD: "+e.getMessage());
         }        
         return conn;
     }
@@ -30,9 +28,9 @@ public class Banco_de_Dados {
     public void desconecta(){
         try{
             conn.close();
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-            e.printStackTrace();
+        }
+        catch(SQLException e) {
+            System.out.println("Erro na desconexão com o banco de dados por parte do BD: "+e.getMessage());
         }  
     }
 }
